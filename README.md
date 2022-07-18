@@ -19,7 +19,7 @@ gradle submit_task
 ```bash
 gradle bootRun
 ```
-- Strep 5, launch 3rd terminal and send sample requests
+- Step 5, launch 3rd terminal and send sample requests
 ```bash
 curl -kvvv -XPOST http://localhost:8080/flows -H'Content-Type: application/json'  -d '[{"hour":1,"src_app":"foo","desc_app":"bar","vpc_id":"vpc-1","bytes_tx":200,"bytes_rx":600},{"hour":1,"src_app":"foo","desc_app":"biz","vpc_id":"vpc-0","bytes_tx":1000,"bytes_rx":800}]]'
 # we already prepare some sample data during init servers (refer Step 2)
@@ -28,6 +28,14 @@ curl -kvvv http://localhost:8080/flows\?hour\=2
 # after 1 minute run
 curl -kvvv http://localhost:8080/flows\?hour\=1
 curl -kvvv http://localhost:8080/flows\?hour\=2
+```
+- Step 6, stop the servers
+```bash
+gradle stop_servers
+```
+- Step 7 (optional), restart the servers
+```bash
+gradle start_servers
 ```
 
 ### Reference Documentation
