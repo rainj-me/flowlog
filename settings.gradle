@@ -1,0 +1,2 @@
+rootProject.name = 'flowlog'
+include 'domain', 'service', 'spark', 'servers'

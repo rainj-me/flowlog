@@ -1,0 +1,46 @@
+plugins {
+	id 'org.springframework.boot' version '2.7.1'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'java'
+}
+
+group = 'me.rainj.flowlog'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '8'
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-data-cassandra-reactive'
+	implementation 'org.springframework.kafka:spring-kafka'
+	implementation 'com.google.guava:guava:31.1-jre'
+	implementation 'org.springdoc:springdoc-openapi-webflux-ui:1.6.9'
+	implementation project(":domain")
+
+	compileOnly 'org.projectlombok:lombok:1.18.24'
+
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'io.projectreactor:reactor-test'
+	testImplementation 'org.springframework.kafka:spring-kafka-test'
+}
+
+bootBuildImage {
+	imageName 'rainj/flowlog-service'
+	runImage 'flowlog-service'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
