@@ -2,7 +2,7 @@
 To understand our services network connectivity, we monitor network “flows” (aggregated connection data) to understand how the network is used. Assume there are a set of agents on a large number of instances which monitor outbound connections and report them periodically. We need to implement a service which can 1) accept network flow data points via a write API, 2) aggregate those data points to accumulate the bytes transferred per flow and 3) serve the aggregated network flow data via a read API.
 
 ## Glossary
-- source application (aka. src_app): the appliation that connect to the destination application
+- source application (aka. src_app): the application that connect to the destination application
 - destination application (aka. dest_app): the application that accept the connection from the source application
 - vpc id (aka. vpc_id) : the identifier of virtual private network
 - byte transmit (aka. byte_tx): the number of bytes send from src_app to dest_app
@@ -12,14 +12,14 @@ To understand our services network connectivity, we monitor network “flows” 
 ### Assumption
 - Assume we have 100 source application
 - Assume ech source application connects to 100 different destination application
-- Assume we have 5 vpcs for each src_app, dest_app pair.
-- Assume we have 1,000,000 production insteances only for source application, each app has 10,000 instances
+- Assume we have 5 VPCs for each src_app, dest_app pair.
+- Assume we have 1,000,000 production instances only for source application, each app has 10,000 instances
 - Assume the agent report the local aggregate log every minute
 - Assume the size of the log entry are less than 1KB
 
 ### Out of Scope
-- The logs are not strong consistency, they can be drop/retransmit a small amount during transmission
-- The logs aggregation are not realtime, they can be delayed in X (<=3) minutes.
+- The logs are not strong consistency, they can be dropped/retransmitted a small amount during transmission
+- The logs' aggregation are not realtime, they can be delayed in X (<=3) minutes.
 
 ## Architecture
 
@@ -83,9 +83,13 @@ For cold data, we can keep 5 minutes level(e.g. 6 months data), hourly level(e.g
 │ Cassandra │    │ Cassandra │
 │           │    │           │
 └───────────┘    └───────────┘
-                                                         ┼
+                        
 ```
-Figure 2, scheduled spark job load from cassnadra, aggregate and save to cassandra
+Figure 2, scheduled spark job load from Cassandra, aggregate and save to cassandra
+
+**Aggregate at GET method**
+
+Since we haven't implemented the extensibility enhancement, so we need to aggregate the log entries from minute level to hour level in the hot table, that's why we need to aggregate during retrieving phase.
 
 **Caching**
 
@@ -98,10 +102,6 @@ Since the instance can keep the connection for long time, enable H2/H3 for strea
 **Deployment**
 
 We can deploy to any cloud since the architecture is not relying on any platform. We also be able to deploy them to the Kubernetes. If we choose to use AWS stack, we can replace the kafka with AWS kinisis, Spark with EMR, cassandra with AWS keyspace (minute level and 5 minutes level) and S3 (hourly and daily).
-
-**Aggregate at GET method**
-
-Since we haven't implement the extend enhancement, so we need to aggregate the log entries from minute level to hour level in the hot table, that's why we need to aggregate during retrieving phase.
 
 ## APIs
 

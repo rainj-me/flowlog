@@ -3,7 +3,8 @@
 
 The flowlog project is using flowlog-service, kafka, spark and cassandra to aggregate the realtime log. The aggregation has one-minute delay, which means the log storage is base on minute level. However, the apis only support hourly level query, it is not a hard limitation, we can easily change it to minute level log query.
 
-For more detail, refer the Design Document
+For more detail, refer the [Design Document](docs/Design.md), for the load test report, refer the [ab testing result](reports/ab_report.md)
+
 
 ### How-to
 - Step 1, clone the repository and change directory to flowlog
