@@ -10,9 +10,16 @@ import org.springframework.web.server.WebExceptionHandler;
 
 import reactor.core.publisher.Mono;
 
+/**
+ * Customer error router, wrap all internal exception to 400 response.
+ */
 @Configuration
 public class CustomErrorsHandler {
-    
+
+    /**
+     * Wrap unknown exception to 400 response.
+     * @return WebExceptionHandler bean.
+     */
     @Bean
     public WebExceptionHandler exceptionHandler() {
         return (exchange, throwable) -> {

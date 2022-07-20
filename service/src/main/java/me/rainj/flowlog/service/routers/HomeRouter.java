@@ -9,9 +9,16 @@ import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
+/**
+ * Home page request router config.
+ */
 @Configuration
-public class IndexRouter {
+public class HomeRouter {
 
+    /**
+     * redirect the home page request to apis specs page.
+     * @return HTTP status 308 and Location header /apis.html .
+     */
     @Bean
     public RouterFunction<ServerResponse> home() {
         return RouterFunctions.route(RequestPredicates.GET("/"),

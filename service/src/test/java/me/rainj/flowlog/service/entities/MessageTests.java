@@ -12,7 +12,7 @@ public class MessageTests {
     private Message message;
 
     @BeforeEach
-    public void initializeMessage() {
+    public void initialize() {
         this.message = Message.builder()
                 .id(UUID.randomUUID()).srcApp("foo")
                 .descApp("bar").vpcId("vpc-0")

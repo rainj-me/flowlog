@@ -9,14 +9,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
+import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import reactor.core.publisher.Flux;
 
 import java.util.UUID;
-import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyIterable;
+import static org.mockito.ArgumentMatchers.anyString;
 
 @ExtendWith(SpringExtension.class)
 public class MessageServiceTests {
@@ -26,14 +28,12 @@ public class MessageServiceTests {
     @MockBean
     private KafkaTemplate<String, String> mockKafkaTemplate;
 
-    @MockBean
-    private NewTopic mockTopic;
-
     private MessageService service;
 
     @BeforeEach
     public void initialize() {
-        this.service = new MessageService(repository, mockKafkaTemplate, mockTopic);
+        NewTopic topic = new NewTopic("test", 1, (short) 1);
+        this.service = new MessageService(repository, mockKafkaTemplate, topic);
     }
 
     @Test
@@ -47,6 +47,7 @@ public class MessageServiceTests {
         Mockito.when(repository.findAllById(anyIterable())).thenReturn(Flux.just(message));
         Flux<Message> messages = this.service.loadMessageByHour(1);
         Message result = messages.blockFirst();
+        assertNotNull(result);
         assertEquals("foo", result.getSrcApp());
         assertEquals("bar", result.getDescApp());
         assertEquals("vpc-0", result.getVpcId());
@@ -73,12 +74,24 @@ public class MessageServiceTests {
         Mockito.when(repository.findAllById(anyIterable())).thenReturn(Flux.just(msg1, msg2));
         Flux<Message> messages = this.service.loadMessageByHour(1);
         Message result = messages.blockFirst();
+        assertNotNull(result);
         assertEquals("foo", result.getSrcApp());
         assertEquals("bar", result.getDescApp());
         assertEquals("vpc-0", result.getVpcId());
         assertEquals(300, result.getBytesRx());
         assertEquals(300, result.getBytesTx());
         assertEquals(1, result.getHour());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testSendMessageToKafka() {
+        Message message = Mockito.mock(Message.class);
+        SendResult<String, String> result = (SendResult<String, String>) Mockito.mock(SendResult.class);
+        Mockito.when(mockKafkaTemplate.send(anyString(), anyString())).thenReturn(new AsyncResult<>(result));
+        this.service.sendMessage(message);
+
+        Mockito.verify(mockKafkaTemplate, Mockito.times(1)).send(anyString(), anyString());
     }
 
 }

@@ -3,12 +3,132 @@
  */
 package me.rainj.flowlog.domain;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MessageTest {
-    // @Test void someLibraryMethodReturnsTrue() {
-    //     Library classUnderTest = new Library();
-    //     assertTrue(classUnderTest.someLibraryMethod(), "someLibraryMethod should return 'true'");
-    // }
+
+    private Message message;
+
+    @BeforeEach
+    public void initialize() {
+        this.message = Message.builder()
+                .hour(1)
+                .srcApp("foo")
+                .descApp("bar")
+                .vpcId("vpc-0")
+                .bytesTx(100)
+                .bytesRx(200)
+                .build();
+    }
+
+    @Test
+    public void testAddMessageSuccessful() {
+        Message other = Message.builder()
+                .hour(1)
+                .srcApp("foo")
+                .descApp("bar")
+                .vpcId("vpc-0")
+                .bytesTx(100)
+                .bytesRx(200)
+                .build();
+        Message result = this.message.add(other);
+        assertEquals("foo", result.getSrcApp());
+        assertEquals("bar", result.getDescApp());
+        assertEquals("vpc-0", result.getVpcId());
+        assertEquals(200, result.getBytesTx());
+        assertEquals(400, result.getBytesRx());
+        assertEquals(1, result.getHour());
+    }
+
+    @Test
+    public void testAddMessageFailed() {
+        Message other = Message.builder()
+                .hour(2)
+                .srcApp("foo")
+                .descApp("bar")
+                .vpcId("vpc-0")
+                .bytesTx(100)
+                .bytesRx(200)
+                .build();
+        Message result = this.message.add(other);
+        assertSame(this.message, result);
+    }
+
+    @Test
+    public void testAddMessageFailed2() {
+        Message result = this.message.add(null);
+        assertSame(this.message, result);
+    }
+
+    @Test
+    public void testMessageToString() {
+        String result = this.message.toString();
+        assertEquals("1,foo,bar,vpc-0,100,200", result);
+    }
+
+    @Test
+    public void testMessageFromString() {
+        String source = "1,foo,bar,vpc-0,100,200";
+        Message result = Message.fromString(source);
+        assertNotNull(result);
+        assertEquals("foo", message.getSrcApp());
+        assertEquals("bar", message.getDescApp());
+        assertEquals("vpc-0", message.getVpcId());
+        assertEquals(100, message.getBytesTx());
+        assertEquals(200, message.getBytesRx());
+        assertEquals(1, message.getHour());
+    }
+
+    @Test
+    public void testHashCode() {
+        Message otherMessage1 = Message.builder()
+                .hour(1)
+                .srcApp("foo")
+                .descApp("bar")
+                .vpcId("vpc-0")
+                .bytesTx(200)
+                .bytesRx(400)
+                .build();
+        Message otherMessage2 = Message.builder()
+                .hour(2)
+                .srcApp("foo")
+                .descApp("bar")
+                .vpcId("vpc-0")
+                .bytesTx(100)
+                .bytesRx(200)
+                .build();
+        Message otherMessage3 = Message.builder()
+                .hour(1)
+                .srcApp("foobar")
+                .descApp("bar")
+                .vpcId("vpc-0")
+                .bytesTx(100)
+                .bytesRx(200)
+                .build();
+        Message otherMessage4 = Message.builder()
+                .hour(1)
+                .srcApp("biz")
+                .descApp("bar")
+                .vpcId("vpc-0")
+                .bytesTx(100)
+                .bytesRx(200)
+                .build();
+        Message otherMessage5 = Message.builder()
+                .hour(1)
+                .srcApp("foo")
+                .descApp("bar")
+                .vpcId("vpc-1")
+                .bytesTx(100)
+                .bytesRx(200)
+                .build();
+
+        assertEquals(this.message.hashCode(), otherMessage1.hashCode());
+        assertNotEquals(this.message.hashCode(), otherMessage2.hashCode());
+        assertNotEquals(this.message.hashCode(), otherMessage3.hashCode());
+        assertNotEquals(this.message.hashCode(), otherMessage4.hashCode());
+        assertNotEquals(this.message.hashCode(), otherMessage5.hashCode());
+    }
+
 }
