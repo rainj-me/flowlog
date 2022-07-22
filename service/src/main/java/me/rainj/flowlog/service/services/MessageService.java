@@ -1,5 +1,10 @@
 package me.rainj.flowlog.service.services;
 
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,12 +40,19 @@ public class MessageService {
 
     /**
      * load message by given hour and aggregate them.
-     * @param hour the hour that agent report the log message.
+     *
+     * @param reportTime the log agent report the log message.
      * @return a distinct set of messages that hashcode are not the same.
      */
-    public Flux<Message> loadMessageByHour(int hour) {
+    public Flux<Message> loadMessageByHour(String reportTime) {
+        Instant queryReportTime = null;
+        try {
+            queryReportTime = Instant.parse(reportTime).truncatedTo(ChronoUnit.MINUTES);
+        } catch (RuntimeException e) {
+            return Flux.error(e);
+        }
         List<MapId> ids = new ArrayList<>();
-        ids.add(BasicMapId.id("hour", hour));
+        ids.add(BasicMapId.id("report_time", queryReportTime));
         return repository.findAllById(ids).map(me.rainj.flowlog.service.entities.Message::toMessage)
                 .groupBy(Message::hashCode)
                 .flatMap((group) -> group.reduce(Message::add));
@@ -49,9 +61,11 @@ public class MessageService {
 
     /**
      * send message to kafka.
+     *
      * @param message the log message.
      */
     public void sendMessage(Message message) {
+        message.setReportTime(message.getReportTime().truncatedTo(ChronoUnit.MINUTES));
         kafkaTemplate.send(topic.name(), message.toString());
     }
 }

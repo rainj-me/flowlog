@@ -1,5 +1,8 @@
 package me.rainj.flowlog.service.entities;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
@@ -22,10 +25,10 @@ import lombok.Data;
 @Builder
 public class Message {
     /**
-     * Log message hour, the primary key
+     * Log message date, primary key
      */
-    @PrimaryKeyColumn(name = "hour", type = PrimaryKeyType.PARTITIONED)
-    private int hour;
+    @PrimaryKeyColumn(name = "report_time", type = PrimaryKeyType.PARTITIONED)
+    private Instant reportTime;
 
     /**
      * Log message id, the clustering key
@@ -74,7 +77,7 @@ public class Message {
         .vpcId(this.vpcId)
         .bytesTx(this.bytesTx)
         .bytesRx(this.bytesRx)
-        .hour(this.hour)
+        .reportTime(this.reportTime.atZone(ZoneId.of("UTC")))
         .build();
     }
 }

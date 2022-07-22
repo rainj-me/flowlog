@@ -5,16 +5,22 @@ package me.rainj.flowlog.domain;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class MessageTest {
 
     private Message message;
+    private final ZonedDateTime reportTime = Instant.parse("2020-01-01T01:00:00Z").atZone(ZoneId.of("UTC"));
 
     @BeforeEach
     public void initialize() {
         this.message = Message.builder()
-                .hour(1)
+                .reportTime(reportTime)
                 .srcApp("foo")
                 .descApp("bar")
                 .vpcId("vpc-0")
@@ -26,7 +32,7 @@ class MessageTest {
     @Test
     public void testAddMessageSuccessful() {
         Message other = Message.builder()
-                .hour(1)
+                .reportTime(reportTime)
                 .srcApp("foo")
                 .descApp("bar")
                 .vpcId("vpc-0")
@@ -39,13 +45,14 @@ class MessageTest {
         assertEquals("vpc-0", result.getVpcId());
         assertEquals(200, result.getBytesTx());
         assertEquals(400, result.getBytesRx());
-        assertEquals(1, result.getHour());
+        assertEquals(reportTime, result.getReportTime());
     }
 
     @Test
     public void testAddMessageFailed() {
+        ZonedDateTime anotherReportTime = Instant.parse("2020-02-02T02:00:00Z").atZone(ZoneId.of("UTC"));
         Message other = Message.builder()
-                .hour(2)
+                .reportTime(anotherReportTime)
                 .srcApp("foo")
                 .descApp("bar")
                 .vpcId("vpc-0")
@@ -65,12 +72,12 @@ class MessageTest {
     @Test
     public void testMessageToString() {
         String result = this.message.toString();
-        assertEquals("1,foo,bar,vpc-0,100,200", result);
+        assertEquals("2020-01-01T01:00:00Z,foo,bar,vpc-0,100,200", result);
     }
 
     @Test
     public void testMessageFromString() {
-        String source = "1,foo,bar,vpc-0,100,200";
+        String source = "2020-01-01T01:00:00Z,foo,bar,vpc-0,100,200";
         Message result = Message.fromString(source);
         assertNotNull(result);
         assertEquals("foo", message.getSrcApp());
@@ -78,13 +85,14 @@ class MessageTest {
         assertEquals("vpc-0", message.getVpcId());
         assertEquals(100, message.getBytesTx());
         assertEquals(200, message.getBytesRx());
-        assertEquals(1, message.getHour());
+        assertEquals(reportTime, message.getReportTime());
     }
 
     @Test
     public void testHashCode() {
+        ZonedDateTime anotherReportTime = Instant.parse("2020-02-02T02:00:00Z").atZone(ZoneId.of("UTC"));
         Message otherMessage1 = Message.builder()
-                .hour(1)
+                .reportTime(reportTime)
                 .srcApp("foo")
                 .descApp("bar")
                 .vpcId("vpc-0")
@@ -92,7 +100,7 @@ class MessageTest {
                 .bytesRx(400)
                 .build();
         Message otherMessage2 = Message.builder()
-                .hour(2)
+                .reportTime(anotherReportTime)
                 .srcApp("foo")
                 .descApp("bar")
                 .vpcId("vpc-0")
@@ -100,7 +108,7 @@ class MessageTest {
                 .bytesRx(200)
                 .build();
         Message otherMessage3 = Message.builder()
-                .hour(1)
+                .reportTime(reportTime)
                 .srcApp("foobar")
                 .descApp("bar")
                 .vpcId("vpc-0")
@@ -108,7 +116,7 @@ class MessageTest {
                 .bytesRx(200)
                 .build();
         Message otherMessage4 = Message.builder()
-                .hour(1)
+                .reportTime(reportTime)
                 .srcApp("biz")
                 .descApp("bar")
                 .vpcId("vpc-0")
@@ -116,7 +124,7 @@ class MessageTest {
                 .bytesRx(200)
                 .build();
         Message otherMessage5 = Message.builder()
-                .hour(1)
+                .reportTime(reportTime)
                 .srcApp("foo")
                 .descApp("bar")
                 .vpcId("vpc-1")

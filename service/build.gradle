@@ -4,9 +4,8 @@ plugins {
 	id 'java'
 }
 
-group = 'me.rainj.flowlog'
+group = 'me.rainj.flowlog.service'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '8'
 
 configurations {
 	compileOnly {

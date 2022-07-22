@@ -1,15 +1,16 @@
-package me.rainj.flowlog.spark.entities;
+package me.rainj.flowlog.jobs.entities;
 
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Data
 @Builder
 public class Message {
 
-    private int hour;
+    private Instant reportTime;
 
     private UUID id;
 
@@ -21,12 +22,11 @@ public class Message {
 
     private Integer bytesTx;
 
-
     private Integer bytesRx;
 
     public static Message fromMessage(me.rainj.flowlog.domain.Message message) {
         return Message.builder()
-                .hour(message.getHour())
+                .reportTime(message.getReportTime().toInstant())
                 .id(UUID.randomUUID())
                 .srcApp(message.getSrcApp())
                 .descApp(message.getDescApp())

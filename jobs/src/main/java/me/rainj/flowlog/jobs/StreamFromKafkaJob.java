@@ -1,9 +1,9 @@
-package me.rainj.flowlog.spark;
+package me.rainj.flowlog.jobs;
 
 import java.util.*;
 
 import com.datastax.spark.connector.japi.CassandraJavaUtil;
-import me.rainj.flowlog.spark.entities.Message;
+import me.rainj.flowlog.jobs.entities.Message;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -19,25 +19,31 @@ import scala.Tuple2;
 
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
-public final class App {
+
+public final class StreamFromKafkaJob {
+
+    private static final String KAFKA_BOOTSTRAP_SERVER_IP = "127.0.0.1";
+    private static final String KAFKA_BOOTSTRAP_SERVER_PORT = "9092";
+    private static final String KAKFA_TOPIC = "flowlog-events";
+    private static final String APP_NAME = "flowlog-spark";
 
     public static void main(String[] args) throws Exception {
 
         SparkConf sparkConf = new SparkConf();
-        sparkConf.setAppName("flowlog-spark");
-        sparkConf.set("spark.cassandra.connection.host", "127.0.0.1");
+        sparkConf.setAppName(APP_NAME);
+        sparkConf.set("spark.cassandra.connection.host", KAFKA_BOOTSTRAP_SERVER_IP);
         JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConf, Durations.seconds(60));
 
         Map<String, Object> kafkaParams = new HashMap<>();
-        kafkaParams.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "127.0.0.1:9092");
-        kafkaParams.put(ConsumerConfig.GROUP_ID_CONFIG, "flowlog-spark");
+        kafkaParams.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, String.format("%s:%s", KAFKA_BOOTSTRAP_SERVER_IP, KAFKA_BOOTSTRAP_SERVER_PORT));
+        kafkaParams.put(ConsumerConfig.GROUP_ID_CONFIG, APP_NAME);
         kafkaParams.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         kafkaParams.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
 
         JavaInputDStream<ConsumerRecord<String, String>> messages = KafkaUtils.createDirectStream(
                 streamingContext,
                 LocationStrategies.PreferConsistent(),
-                ConsumerStrategies.Subscribe(Collections.singletonList("flowlog-events"), kafkaParams));
+                ConsumerStrategies.Subscribe(Collections.singletonList(KAKFA_TOPIC), kafkaParams));
 
         JavaDStream<String> lines = messages.map(ConsumerRecord::value);
         lines.map(me.rainj.flowlog.domain.Message::fromString)
@@ -48,7 +54,7 @@ public final class App {
                     CassandraJavaUtil.javaFunctions(rdd)
                             .writerBuilder("flowlog", "flowlog",
                                     mapToRow(Message.class,
-                                            Pair.of("hour", "hour"),
+                                            Pair.of("reportTime", "report_time"),
                                             Pair.of("id", "id"),
                                             Pair.of("srcApp", "src_app"),
                                             Pair.of("descApp", "desc_app"),

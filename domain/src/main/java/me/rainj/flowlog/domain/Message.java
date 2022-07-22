@@ -1,5 +1,6 @@
 package me.rainj.flowlog.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;
@@ -9,6 +10,9 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 /**
  * Message domain use by flowlog service and spark job.
@@ -26,9 +30,11 @@ public class Message implements Serializable {
     public static final String DELIM = ",";
 
     /**
-     * Message generate hour.
+     * log report time.
      */
-    private Integer hour;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
+    @JsonProperty("report_time")
+    private ZonedDateTime reportTime;
 
     /**
      * Source application
@@ -56,7 +62,7 @@ public class Message implements Serializable {
     private Integer bytesTx;
 
     /**
-     * Byte transmitted from destination application to source application, execlude from hash code.
+     * Byte transmitted from destination application to source application, exclude from hash code.
      */
     @EqualsAndHashCode.Exclude
     @JsonProperty("bytes_rx")
@@ -86,7 +92,7 @@ public class Message implements Serializable {
      * @return Serialized string.
      */
     public String toString() {
-        return this.hour + DELIM +
+        return this.reportTime.toInstant().toString() + DELIM +
                 this.srcApp + DELIM +
                 this.descApp + DELIM +
                 this.vpcId + DELIM +
@@ -102,7 +108,7 @@ public class Message implements Serializable {
     public static Message fromString(String source) {
         String[] tokens = source.split(DELIM);
         return Message.builder()
-                .hour(Integer.parseInt(tokens[0]))
+                .reportTime(Instant.parse(tokens[0]).atZone(ZoneId.of("UTC")))
                 .srcApp(tokens[1])
                 .descApp(tokens[2])
                 .vpcId(tokens[3])

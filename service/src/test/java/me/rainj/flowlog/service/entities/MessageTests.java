@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.UUID;
 
 public class MessageTests {
@@ -13,22 +15,24 @@ public class MessageTests {
 
     @BeforeEach
     public void initialize() {
+        Instant reportTime = Instant.parse("2020-01-01T01:00:00Z");
         this.message = Message.builder()
                 .id(UUID.randomUUID()).srcApp("foo")
                 .descApp("bar").vpcId("vpc-0")
-                .bytesRx(100).bytesTx(200).hour(1)
+                .bytesRx(100).bytesTx(200).reportTime(reportTime)
                 .build();
     }
 
     @Test
     public void testToMessageDomainObject() {
+        Instant reportTime = Instant.parse("2020-01-01T01:00:00Z");
         me.rainj.flowlog.domain.Message message = this.message.toMessage();
         assertEquals("foo", message.getSrcApp());
         assertEquals("bar", message.getDescApp());
         assertEquals("vpc-0", message.getVpcId());
         assertEquals(100, message.getBytesRx());
         assertEquals(200, message.getBytesTx());
-        assertEquals(1, message.getHour());
+        assertEquals(reportTime.atZone(ZoneId.of("UTC")), message.getReportTime());
     }
 
 }
