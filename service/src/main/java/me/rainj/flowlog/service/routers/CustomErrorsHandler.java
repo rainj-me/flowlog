@@ -27,7 +27,7 @@ public class CustomErrorsHandler {
             if (throwable instanceof NoSuchElementException) {
                 response.setStatusCode(HttpStatus.NOT_FOUND);
             } else {
-            response.setStatusCode(HttpStatus.BAD_REQUEST);
+                response.setStatusCode(HttpStatus.BAD_REQUEST);
             }
             return Mono.empty();
         };

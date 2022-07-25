@@ -14,11 +14,26 @@ import java.time.ZonedDateTime;
 @RequiredArgsConstructor
 @Getter
 public enum AggregationLevel {
+    /**
+     * One minute aggregation.
+     */
     ONE_MINUTE(60L),
+    /**
+     * Five minutes aggregation.
+     */
     FIVE_MINUTES(5 * 60L),
+    /**
+     * One hour aggregation.
+     */
     ONE_HOUR(60 * 60L),
+    /**
+     * One day aggregation.
+     */
     ONE_DAY(24 * 60 * 60L);
 
+    /**
+     * Seconds of the aggregation level.
+     */
     private final Long seconds;
 
     /**
@@ -39,6 +54,10 @@ public enum AggregationLevel {
         return this.truncateTo(dateTime.toInstant()).atZone(ZoneId.of("UTC"));
     }
 
+    /**
+     * Get the previous aggregation level like a state machine.
+     * @return the previous aggregation level.
+     */
     public AggregationLevel previous() {
         switch (this) {
             case ONE_MINUTE: throw new FlowlogException("No aggregation level less than ONE_MINUTE");

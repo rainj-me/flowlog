@@ -1,30 +1,21 @@
 package me.rainj.flowlog.service.services;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.google.common.annotations.VisibleForTesting;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import me.rainj.flowlog.domain.AggregationLevel;
+import me.rainj.flowlog.domain.Message;
 import me.rainj.flowlog.exceptions.FlowlogException;
+import me.rainj.flowlog.service.repositories.MessageRepository;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.cassandra.core.mapping.BasicMapId;
-import org.springframework.data.cassandra.core.mapping.MapId;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-
-import me.rainj.flowlog.domain.Message;
-import me.rainj.flowlog.service.repositories.MessageRepository;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+
+import java.time.Instant;
 
 /**
  * The log message service, uses to load message from database and send message to kafka.
@@ -34,14 +25,23 @@ import reactor.core.publisher.Mono;
 @NoArgsConstructor
 public class MessageService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MessageService.class);
+    private static final Logger logger = LoggerFactory.getLogger(MessageService.class);
 
+    /**
+     * Message repository.
+     */
     @Autowired
     private MessageRepository repository;
 
+    /**
+     * Kafka template.
+     */
     @Autowired
     private KafkaTemplate<String, String> kafkaTemplate;
 
+    /**
+     * Kafka topic.
+     */
     @Autowired
     private NewTopic topic;
 
@@ -59,20 +59,26 @@ public class MessageService {
             aggLevel = AggregationLevel.valueOf(aggregationLevel.toUpperCase());
             queryReportTime = aggLevel.truncateTo(Instant.parse(reportTime));
         } catch (RuntimeException e) {
+            logger.error(e.getMessage());
             return Flux.error(new FlowlogException(e.getMessage()));
         }
 
+        Flux<Message> result = repository.findAllByAggLevelAndReportTime(aggLevel.name(), queryReportTime)
+                .map(me.rainj.flowlog.service.entities.Message::toMessage);
+
+        // One minute aggregation still need to aggregate during retrieving
+        // Five minutes, one hour, one day aggregation message doesn't require aggregation.
         if (AggregationLevel.ONE_MINUTE.equals(aggLevel)) {
-            return repository.findAllByAggLevelAndReportTime(aggLevel.name(), queryReportTime)
-                    .map(me.rainj.flowlog.service.entities.Message::toMessage)
-                    .groupBy(Message::hashCode)
-                    .flatMap((group) -> group.reduce(Message::add));
-        } else {
-            return repository.findAllByAggLevelAndReportTime(aggLevel.name(), queryReportTime)
-                    .map(me.rainj.flowlog.service.entities.Message::toMessage);
+            result = result.groupBy(Message::hashCode).flatMap((group) -> group.reduce(Message::add));
         }
+
+        return result;
     }
 
+    /**
+     * Get current time.
+     * @return current time.
+     */
     @VisibleForTesting
     Instant currentTime() {
         return Instant.now();
@@ -83,18 +89,17 @@ public class MessageService {
      *
      * @param message the log message.
      */
-    public Mono<Message> sendMessage(Message message) {
+    public void sendMessage(Message message) {
         Instant now = currentTime();
         AggregationLevel level = AggregationLevel.ONE_MINUTE;
         message.setAggLevel(level);
-        LOG.info("log report time: " + message.getReportTime() + ", now: " + now);
 
         if (message.getReportTime().toInstant().isBefore(level.truncateTo(now).minusSeconds(level.getSeconds()))) {
-            LOG.error("The log message: " + message + " is stale");;
-            Mono.error(new FlowlogException("The log message: " + message + " is stale"));
+            // Silently ignore the stale message.
+            logger.error("Stale message: " + message);
+            return;
         }
         message.setReportTime(level.truncateTo(message.getReportTime()));
         kafkaTemplate.send(topic.name(), message.toString());
-        return Mono.just(message);
     }
 }

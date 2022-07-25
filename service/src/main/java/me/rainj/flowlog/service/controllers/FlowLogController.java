@@ -45,6 +45,6 @@ public class FlowLogController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public void process(@RequestBody List<Message> messages) {
-        Flux.fromIterable(messages).map(service::sendMessage).onErrorResume(e-> Mono.empty());
+        Flux.fromIterable(messages).subscribe(service::sendMessage);
     }
 }

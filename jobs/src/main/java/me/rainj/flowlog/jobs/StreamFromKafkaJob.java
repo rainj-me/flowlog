@@ -21,17 +21,31 @@ import scala.Tuple2;
 
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
+/**
+ * Spark streaming from kafka job.
+ */
 public final class StreamFromKafkaJob {
 
-    private static final String APP_NAME = "flowlog-spark";
+    /**
+     * Spark job name.
+     */
+    private static final String JOB_NAME = "flowlog-spark";
+
+    /**
+     * Casandra table name.
+     */
     private static final String TABLE_NAME = "message";
+
+    /**
+     * Kafka topic.
+     */
     private static final String KAKFA_TOPIC = "flowlog-events";
 
     public static void main(String[] args) throws Exception {
 
         Duration duration = Durations.seconds(60);
         SparkConf sparkConf = new SparkConf()
-                .setAppName(APP_NAME)
+                .setAppName(JOB_NAME)
                 .set(Constant.CASSANDRA_CONNECTION_KEY, Constant.CASSANDRA_CONNECTION_HOST);
 
         JavaStreamingContext context = new JavaStreamingContext(sparkConf, duration);
@@ -39,7 +53,7 @@ public final class StreamFromKafkaJob {
         Map<String, Object> kafkaParams = new HashMap<>();
         kafkaParams.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
                 String.format("%s:%s", Constant.KAFKA_BOOTSTRAP_SERVER_IP, Constant.KAFKA_BOOTSTRAP_SERVER_PORT));
-        kafkaParams.put(ConsumerConfig.GROUP_ID_CONFIG, APP_NAME);
+        kafkaParams.put(ConsumerConfig.GROUP_ID_CONFIG, JOB_NAME);
         kafkaParams.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         kafkaParams.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
 
