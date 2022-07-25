@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import me.rainj.flowlog.domain.Message;
 import me.rainj.flowlog.service.services.MessageService;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -44,6 +45,6 @@ public class FlowLogController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public void process(@RequestBody List<Message> messages) {
-        Flux.fromIterable(messages).subscribe(service::sendMessage);
+        Flux.fromIterable(messages).map(service::sendMessage).onErrorResume(e-> Mono.empty());
     }
 }

@@ -14,6 +14,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * The scheduling tasks configs.
+ */
 @Validated
 @Configuration
 @EnableConfigurationProperties
@@ -21,12 +24,21 @@ import java.util.List;
 @Data
 public class TasksConfig implements InitializingBean {
 
+    /**
+     * List of spark task config.
+     */
     @NotEmpty
     private List<TaskConfig> tasks = new ArrayList<>();
 
+    /**
+     * Spark home directory.
+     */
     @NotNull
     private File sparkHome;
 
+    /**
+     * Validate the SparksConfig.
+     */
     public void validate() {
         if (!this.sparkHome.exists())
             throw new FlowlogException("The spark home: " + this.sparkHome.getAbsolutePath() + " not exists.");
@@ -35,6 +47,10 @@ public class TasksConfig implements InitializingBean {
         }
     }
 
+    /**
+     * After the bean initialized, validate the bean.
+     * @throws Exception FlowlogException when the validation failed.
+     */
     @Override
     public void afterPropertiesSet() throws Exception {
         this.validate();

@@ -1,6 +1,8 @@
 package me.rainj.flowlog.service.services;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +13,8 @@ import lombok.NoArgsConstructor;
 import me.rainj.flowlog.domain.AggregationLevel;
 import me.rainj.flowlog.exceptions.FlowlogException;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.cassandra.core.mapping.BasicMapId;
 import org.springframework.data.cassandra.core.mapping.MapId;
@@ -20,6 +24,7 @@ import org.springframework.stereotype.Service;
 import me.rainj.flowlog.domain.Message;
 import me.rainj.flowlog.service.repositories.MessageRepository;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * The log message service, uses to load message from database and send message to kafka.
@@ -28,6 +33,8 @@ import reactor.core.publisher.Flux;
 @AllArgsConstructor
 @NoArgsConstructor
 public class MessageService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MessageService.class);
 
     @Autowired
     private MessageRepository repository;
@@ -76,15 +83,18 @@ public class MessageService {
      *
      * @param message the log message.
      */
-    public void sendMessage(Message message) {
+    public Mono<Message> sendMessage(Message message) {
         Instant now = currentTime();
         AggregationLevel level = AggregationLevel.ONE_MINUTE;
-        if (message.getReportTime().toInstant().isBefore(level.truncateTo(now).minusSeconds(level.getSeconds()))) {
-            throw new FlowlogException("The log message: " + message + " is stale");
-        }
+        message.setAggLevel(level);
+        LOG.info("log report time: " + message.getReportTime() + ", now: " + now);
 
-        message.setAggLevel(AggregationLevel.ONE_MINUTE);
+        if (message.getReportTime().toInstant().isBefore(level.truncateTo(now).minusSeconds(level.getSeconds()))) {
+            LOG.error("The log message: " + message + " is stale");;
+            Mono.error(new FlowlogException("The log message: " + message + " is stale"));
+        }
         message.setReportTime(level.truncateTo(message.getReportTime()));
         kafkaTemplate.send(topic.name(), message.toString());
+        return Mono.just(message);
     }
 }

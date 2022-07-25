@@ -10,10 +10,18 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+/**
+ * Spark job runner.
+ */
 @RequiredArgsConstructor
 public class SparkTaskRunner implements Runnable {
-
+    /**
+     * The task config.
+     */
     private final TaskConfig task;
+    /**
+     * Spark home directory.
+     */
     private final File sparkHome;
 
     @Override
@@ -31,6 +39,10 @@ public class SparkTaskRunner implements Runnable {
         }
     }
 
+    /**
+     * Build spark launcher to launch spark job.
+     * @return spark launcher.
+     */
     private SparkLauncher buildSparkLauncher() {
         SparkLauncher taskLauncher = new SparkLauncher()
                 .setSparkHome(sparkHome.getAbsolutePath())

@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import me.rainj.flowlog.domain.AggregationLevel;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.UUID;
@@ -14,7 +15,7 @@ import java.util.UUID;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Message {
+public class Message implements Serializable {
 
     private String aggLevel;
 
@@ -59,5 +60,18 @@ public class Message {
                 .bytesRx(this.bytesRx)
                 .bytesTx(this.bytesTx)
                 .build();
+    }
+
+    public static Message.MessageBuilder from(Message message) {
+        return Message.builder()
+                .aggLevel(message.getAggLevel())
+                .reportTime(message.getReportTime())
+                .uid(message.getUid())
+                .srcApp(message.getSrcApp())
+                .descApp(message.getDescApp())
+                .vpcId(message.getVpcId())
+                .bytesTx(message.getBytesTx())
+                .bytesRx(message.getBytesRx())
+                .status(message.getStatus());
     }
 }
