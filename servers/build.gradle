@@ -70,8 +70,8 @@ task delete_servers(type: Exec) {
 }
 
 task start_cassandra(type: Exec, dependsOn: 'deflate_cassandra') {
-    workingDir './cassandra'
-    commandLine 'bin/cassandra', '-p', 'server.pid'
+    workingDir '.'
+    commandLine './start_cassandra.sh'
     standardOutput = new ByteArrayOutputStream()
     doLast {
         println standardOutput.toString()

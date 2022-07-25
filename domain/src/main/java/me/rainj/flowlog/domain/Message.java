@@ -29,6 +29,9 @@ public class Message implements Serializable {
      */
     public static final String DELIM = ",";
 
+    @JsonProperty("agg_level")
+    private AggregationLevel aggLevel;
+
     /**
      * log report time.
      */
@@ -70,6 +73,7 @@ public class Message implements Serializable {
 
     /**
      * Aggregate the message with same hash code.
+     *
      * @param other the other message.
      * @return the aggregate message.
      */
@@ -89,10 +93,12 @@ public class Message implements Serializable {
 
     /**
      * Serialize message to string.
+     *
      * @return Serialized string.
      */
     public String toString() {
-        return this.reportTime.toInstant().toString() + DELIM +
+        return this.aggLevel.name() + DELIM +
+                this.reportTime.toInstant().toString() + DELIM +
                 this.srcApp + DELIM +
                 this.descApp + DELIM +
                 this.vpcId + DELIM +
@@ -102,18 +108,20 @@ public class Message implements Serializable {
 
     /**
      * Deserialize message from string.
+     *
      * @param source The serialized message string.
      * @return Message.
      */
     public static Message fromString(String source) {
         String[] tokens = source.split(DELIM);
         return Message.builder()
-                .reportTime(Instant.parse(tokens[0]).atZone(ZoneId.of("UTC")))
-                .srcApp(tokens[1])
-                .descApp(tokens[2])
-                .vpcId(tokens[3])
-                .bytesTx(Integer.parseInt(tokens[4]))
-                .bytesRx(Integer.parseInt(tokens[5]))
+                .aggLevel(AggregationLevel.valueOf(tokens[0]))
+                .reportTime(Instant.parse(tokens[1]).atZone(ZoneId.of("UTC")))
+                .srcApp(tokens[2])
+                .descApp(tokens[3])
+                .vpcId(tokens[4])
+                .bytesTx(Integer.parseInt(tokens[5]))
+                .bytesRx(Integer.parseInt(tokens[6]))
                 .build();
     }
 

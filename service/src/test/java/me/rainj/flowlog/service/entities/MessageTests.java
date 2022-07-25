@@ -2,6 +2,7 @@ package me.rainj.flowlog.service.entities;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import me.rainj.flowlog.domain.AggregationLevel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -17,7 +18,8 @@ public class MessageTests {
     public void initialize() {
         Instant reportTime = Instant.parse("2020-01-01T01:00:00Z");
         this.message = Message.builder()
-                .id(UUID.randomUUID()).srcApp("foo")
+                .aggLevel("ONE_MINUTE")
+                .uid(UUID.randomUUID()).srcApp("foo")
                 .descApp("bar").vpcId("vpc-0")
                 .bytesRx(100).bytesTx(200).reportTime(reportTime)
                 .build();
@@ -27,6 +29,7 @@ public class MessageTests {
     public void testToMessageDomainObject() {
         Instant reportTime = Instant.parse("2020-01-01T01:00:00Z");
         me.rainj.flowlog.domain.Message message = this.message.toMessage();
+        assertEquals(AggregationLevel.ONE_MINUTE, message.getAggLevel());
         assertEquals("foo", message.getSrcApp());
         assertEquals("bar", message.getDescApp());
         assertEquals("vpc-0", message.getVpcId());

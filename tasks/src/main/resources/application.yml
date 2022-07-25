@@ -1,0 +1,35 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+  task:
+    scheduling:
+      pool:
+        size: 4
+flowlog:
+  tasks:
+    - name: flowlog-aggregate-every-five-minutes-task
+      type: FIVE_MINUTES
+      jar-file: ${FLOWLOG_AGGREGATE_FIVE_MINUTES_JAR:../jobs/build/libs/jobs.jar}
+      main-class: ${FLOWLOG_STREAM_KAFKA_CLASS:me.rainj.flowlog.jobs.AggregateEveryFiveMinutes}
+      packages:
+        - com.datastax.spark:spark-cassandra-connector_2.12:3.2.0
+      dependencies:
+        - ${FLOWLOG_STREAM_KAFKA_JAR_DEPEND:../domain/build/libs/domain.jar}
+    - name: flowlog-aggregate-every-one-hour-task
+      type: ONE_HOUR
+      jar-file: ${FLOWLOG_AGGREGATE_FIVE_MINUTES_JAR:../jobs/build/libs/jobs.jar}
+      main-class: ${FLOWLOG_STREAM_KAFKA_CLASS:me.rainj.flowlog.jobs.AggregateEveryOneHour}
+      packages:
+        - com.datastax.spark:spark-cassandra-connector_2.12:3.2.0
+      dependencies:
+        - ${FLOWLOG_STREAM_KAFKA_JAR_DEPEND:../domain/build/libs/domain.jar}
+    - name: flowlog-aggregate-every-one-day-task
+      type: ONE_DAY
+      jar-file: ${FLOWLOG_AGGREGATE_FIVE_MINUTES_JAR:../jobs/build/libs/jobs.jar}
+      main-class: ${FLOWLOG_STREAM_KAFKA_CLASS:me.rainj.flowlog.jobs.AggregateEveryOneDay}
+      packages:
+        - com.datastax.spark:spark-cassandra-connector_2.12:3.2.0
+      dependencies:
+        - ${FLOWLOG_STREAM_KAFKA_JAR_DEPEND:../domain/build/libs/domain.jar}
+  spark-home: ${FLOWLOG_SPARK_HOME:../servers/spark}

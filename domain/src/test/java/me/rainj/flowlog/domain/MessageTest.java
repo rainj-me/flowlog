@@ -20,6 +20,7 @@ class MessageTest {
     @BeforeEach
     public void initialize() {
         this.message = Message.builder()
+                .aggLevel(AggregationLevel.ONE_MINUTE)
                 .reportTime(reportTime)
                 .srcApp("foo")
                 .descApp("bar")
@@ -32,6 +33,7 @@ class MessageTest {
     @Test
     public void testAddMessageSuccessful() {
         Message other = Message.builder()
+                .aggLevel(AggregationLevel.ONE_MINUTE)
                 .reportTime(reportTime)
                 .srcApp("foo")
                 .descApp("bar")
@@ -72,14 +74,15 @@ class MessageTest {
     @Test
     public void testMessageToString() {
         String result = this.message.toString();
-        assertEquals("2020-01-01T01:00:00Z,foo,bar,vpc-0,100,200", result);
+        assertEquals("ONE_MINUTE,2020-01-01T01:00:00Z,foo,bar,vpc-0,100,200", result);
     }
 
     @Test
     public void testMessageFromString() {
-        String source = "2020-01-01T01:00:00Z,foo,bar,vpc-0,100,200";
+        String source = "ONE_MINUTE,2020-01-01T01:00:00Z,foo,bar,vpc-0,100,200";
         Message result = Message.fromString(source);
         assertNotNull(result);
+        assertEquals(AggregationLevel.ONE_MINUTE, message.getAggLevel());
         assertEquals("foo", message.getSrcApp());
         assertEquals("bar", message.getDescApp());
         assertEquals("vpc-0", message.getVpcId());
@@ -92,6 +95,7 @@ class MessageTest {
     public void testHashCode() {
         ZonedDateTime anotherReportTime = Instant.parse("2020-02-02T02:00:00Z").atZone(ZoneId.of("UTC"));
         Message otherMessage1 = Message.builder()
+                .aggLevel(AggregationLevel.ONE_MINUTE)
                 .reportTime(reportTime)
                 .srcApp("foo")
                 .descApp("bar")
@@ -100,6 +104,7 @@ class MessageTest {
                 .bytesRx(400)
                 .build();
         Message otherMessage2 = Message.builder()
+                .aggLevel(AggregationLevel.ONE_MINUTE)
                 .reportTime(anotherReportTime)
                 .srcApp("foo")
                 .descApp("bar")
@@ -108,6 +113,7 @@ class MessageTest {
                 .bytesRx(200)
                 .build();
         Message otherMessage3 = Message.builder()
+                .aggLevel(AggregationLevel.ONE_MINUTE)
                 .reportTime(reportTime)
                 .srcApp("foobar")
                 .descApp("bar")
@@ -116,6 +122,7 @@ class MessageTest {
                 .bytesRx(200)
                 .build();
         Message otherMessage4 = Message.builder()
+                .aggLevel(AggregationLevel.ONE_MINUTE)
                 .reportTime(reportTime)
                 .srcApp("biz")
                 .descApp("bar")
@@ -124,10 +131,21 @@ class MessageTest {
                 .bytesRx(200)
                 .build();
         Message otherMessage5 = Message.builder()
+                .aggLevel(AggregationLevel.ONE_MINUTE)
                 .reportTime(reportTime)
                 .srcApp("foo")
                 .descApp("bar")
                 .vpcId("vpc-1")
+                .bytesTx(100)
+                .bytesRx(200)
+                .build();
+
+        Message otherMessage6 = Message.builder()
+                .aggLevel(AggregationLevel.FIVE_MINUTES)
+                .reportTime(reportTime)
+                .srcApp("foo")
+                .descApp("bar")
+                .vpcId("vpc-0")
                 .bytesTx(100)
                 .bytesRx(200)
                 .build();
@@ -137,6 +155,7 @@ class MessageTest {
         assertNotEquals(this.message.hashCode(), otherMessage3.hashCode());
         assertNotEquals(this.message.hashCode(), otherMessage4.hashCode());
         assertNotEquals(this.message.hashCode(), otherMessage5.hashCode());
+        assertNotEquals(this.message.hashCode(), otherMessage6.hashCode());
     }
 
 }

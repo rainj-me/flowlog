@@ -1,5 +1,6 @@
 package me.rainj.flowlog.service.services;
 
+import me.rainj.flowlog.domain.AggregationLevel;
 import me.rainj.flowlog.domain.Message;
 import me.rainj.flowlog.service.repositories.MessageRepository;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -19,8 +20,7 @@ import java.time.ZoneId;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyIterable;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 
 @ExtendWith(SpringExtension.class)
 public class MessageServiceTests {
@@ -42,13 +42,14 @@ public class MessageServiceTests {
     public void testLoadMessageByHour() {
         Instant reportTime = Instant.parse("2020-01-01T01:00:00Z");
         me.rainj.flowlog.service.entities.Message message = me.rainj.flowlog.service.entities.Message.builder()
-                .id(UUID.randomUUID()).srcApp("foo")
+                .aggLevel(AggregationLevel.ONE_MINUTE.toString())
+                .uid(UUID.randomUUID()).srcApp("foo")
                 .descApp("bar").vpcId("vpc-0")
                 .bytesRx(100).bytesTx(200).reportTime(reportTime)
                 .build();
 
-        Mockito.when(repository.findAllById(anyIterable())).thenReturn(Flux.just(message));
-        Flux<Message> messages = this.service.loadMessageByHour(reportTime.toString());
+        Mockito.when(repository.findAllByAggLevelAndReportTime(anyString(), any())).thenReturn(Flux.just(message));
+        Flux<Message> messages = this.service.loadMessage(reportTime.toString(), AggregationLevel.ONE_MINUTE.toString());
         Message result = messages.blockFirst();
         assertNotNull(result);
         assertEquals("foo", result.getSrcApp());
@@ -63,22 +64,25 @@ public class MessageServiceTests {
     public void testLoadMessageByHourAggregate() {
         Instant reportTime = Instant.parse("2020-01-01T01:00:00Z");
         me.rainj.flowlog.service.entities.Message msg1 = me.rainj.flowlog.service.entities.Message.builder()
-                .id(UUID.randomUUID()).srcApp("foo")
+                .aggLevel(AggregationLevel.ONE_MINUTE.toString())
+                .uid(UUID.randomUUID()).srcApp("foo")
                 .descApp("bar").vpcId("vpc-0")
                 .bytesRx(100).bytesTx(200).reportTime(reportTime)
                 .build();
 
         me.rainj.flowlog.service.entities.Message msg2 = me.rainj.flowlog.service.entities.Message.builder()
-                .id(UUID.randomUUID()).srcApp("foo")
+                .aggLevel(AggregationLevel.ONE_MINUTE.toString())
+                .uid(UUID.randomUUID()).srcApp("foo")
                 .descApp("bar").vpcId("vpc-0")
                 .bytesRx(200).bytesTx(100).reportTime(reportTime)
                 .build();
 
 
-        Mockito.when(repository.findAllById(anyIterable())).thenReturn(Flux.just(msg1, msg2));
-        Flux<Message> messages = this.service.loadMessageByHour(reportTime.toString());
+        Mockito.when(repository.findAllByAggLevelAndReportTime(anyString(), any())).thenReturn(Flux.just(msg1, msg2));
+        Flux<Message> messages = this.service.loadMessage(reportTime.toString(), AggregationLevel.ONE_MINUTE.toString());
         Message result = messages.blockFirst();
         assertNotNull(result);
+        assertEquals(AggregationLevel.ONE_MINUTE, result.getAggLevel());
         assertEquals("foo", result.getSrcApp());
         assertEquals("bar", result.getDescApp());
         assertEquals("vpc-0", result.getVpcId());
@@ -91,7 +95,8 @@ public class MessageServiceTests {
     @SuppressWarnings("unchecked")
     public void testSendMessageToKafka() {
         Message message = Message.builder()
-                .reportTime(Instant.parse("2020-01-01T01:00:00Z").atZone(ZoneId.of("UTC")))
+                .aggLevel(AggregationLevel.ONE_MINUTE)
+                .reportTime(Instant.now().atZone(ZoneId.of("UTC")))
                 .srcApp("foo")
                 .descApp("bar")
                 .vpcId("vpc-0")

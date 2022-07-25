@@ -15,8 +15,9 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.24'
     compileOnly 'org.projectlombok:lombok:1.18.24'
     implementation 'org.springframework.boot:spring-boot-starter'
-    implementation 'org.apache.spark:spark-core_2.12:3.3.0'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.apache.spark:spark-launcher_2.12:3.3.0'
+    implementation project(':domain')
 
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
     testCompileOnly 'org.projectlombok:lombok:1.18.24'
@@ -24,13 +25,7 @@ dependencies {
     testImplementation('org.springframework.boot:spring-boot-starter-test')
 }
 
-task copy_jar_from_jobs(type: Copy, dependsOn: ':jobs:build') {
-    from project(':jobs').file("build/libs")
-    include 'jobs.jar'
-    into file('src/main/resources/jobs')
-}
-
-processResources.dependsOn copy_jar_from_jobs
+build.dependsOn(':jobs:build')
 
 test {
     useJUnitPlatform()

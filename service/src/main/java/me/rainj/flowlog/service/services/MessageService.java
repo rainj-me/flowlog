@@ -1,15 +1,15 @@
 package me.rainj.flowlog.service.services;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.common.annotations.VisibleForTesting;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import me.rainj.flowlog.domain.AggregationLevel;
+import me.rainj.flowlog.exceptions.FlowlogException;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.cassandra.core.mapping.BasicMapId;
@@ -41,31 +41,50 @@ public class MessageService {
     /**
      * load message by given hour and aggregate them.
      *
-     * @param reportTime the log agent report the log message.
+     * @param reportTime       the log agent report the log message.
+     * @param aggregationLevel the log message aggregation level.
      * @return a distinct set of messages that hashcode are not the same.
      */
-    public Flux<Message> loadMessageByHour(String reportTime) {
+    public Flux<Message> loadMessage(String reportTime, String aggregationLevel) {
         Instant queryReportTime = null;
+        AggregationLevel aggLevel = null;
         try {
-            queryReportTime = Instant.parse(reportTime).truncatedTo(ChronoUnit.MINUTES);
+            aggLevel = AggregationLevel.valueOf(aggregationLevel.toUpperCase());
+            queryReportTime = aggLevel.truncateTo(Instant.parse(reportTime));
         } catch (RuntimeException e) {
-            return Flux.error(e);
+            return Flux.error(new FlowlogException(e.getMessage()));
         }
-        List<MapId> ids = new ArrayList<>();
-        ids.add(BasicMapId.id("report_time", queryReportTime));
-        return repository.findAllById(ids).map(me.rainj.flowlog.service.entities.Message::toMessage)
-                .groupBy(Message::hashCode)
-                .flatMap((group) -> group.reduce(Message::add));
 
+        if (AggregationLevel.ONE_MINUTE.equals(aggLevel)) {
+            return repository.findAllByAggLevelAndReportTime(aggLevel.name(), queryReportTime)
+                    .map(me.rainj.flowlog.service.entities.Message::toMessage)
+                    .groupBy(Message::hashCode)
+                    .flatMap((group) -> group.reduce(Message::add));
+        } else {
+            return repository.findAllByAggLevelAndReportTime(aggLevel.name(), queryReportTime)
+                    .map(me.rainj.flowlog.service.entities.Message::toMessage);
+        }
+    }
+
+    @VisibleForTesting
+    Instant currentTime() {
+        return Instant.now();
     }
 
     /**
-     * send message to kafka.
+     * Send message to kafka if the message is not stale.
      *
      * @param message the log message.
      */
     public void sendMessage(Message message) {
-        message.setReportTime(message.getReportTime().truncatedTo(ChronoUnit.MINUTES));
+        Instant now = currentTime();
+        AggregationLevel level = AggregationLevel.ONE_MINUTE;
+        if (message.getReportTime().toInstant().isBefore(level.truncateTo(now).minusSeconds(level.getSeconds()))) {
+            throw new FlowlogException("The log message: " + message + " is stale");
+        }
+
+        message.setAggLevel(AggregationLevel.ONE_MINUTE);
+        message.setReportTime(level.truncateTo(message.getReportTime()));
         kafkaTemplate.send(topic.name(), message.toString());
     }
 }
